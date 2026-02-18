@@ -26,13 +26,13 @@ int main() // MAIN
         char* input = inputString;
         bool ERROR_STATUS = false;
 
+        // print the current directory
         getcwd(cwd, sizeof(cwd));
-
         printf("%s$ ", cwd);
 
         // get the user input
         fgets(inputString, sizeof(inputString), stdin);
-        if (inputString[0] == '\n'){
+        if (inputString[0] == '\n'){  // don't continue if the user didn't type anything
             continue;
         }
 	    
@@ -52,25 +52,23 @@ int main() // MAIN
 
 	    // execute the command
 	    executeCommand(command);
-
 	}
-    
-    
 }
 
 char **parseInput(char *input, bool *errorStatus){
 
-    // remove the newline character from when fgets did its job
-    input[strcspn(input, "\n")] = 0;  
+    // replace the newline character with \0
+    input[strcspn(input, "\n")] = '\0';  
 
     // allocate space for the array of strings
     int MAX_ARGS = 32;
     char **args = calloc(MAX_ARGS, sizeof(char *));
 
     int i = 0;  // this will be used to access each space of args (max 32)
-    int lastChar = 0;
+    int lastChar = 0;  // used to keep track of the last char checked when tokenizing
     char *token = tokenize(input, &lastChar, errorStatus);  // create the first token 
 
+    // add each token to an array args
     while (i < MAX_ARGS - 1 && token != NULL){
 
         args[i] = token;
@@ -79,6 +77,7 @@ char **parseInput(char *input, bool *errorStatus){
 
     }
 
+    // check if any errors occured after tokenization
     if (token != NULL){  
         printf("Error: too many arguments\n");
         *errorStatus = true;
@@ -93,6 +92,7 @@ char **parseInput(char *input, bool *errorStatus){
 
 void executeCommand(char **command){
     
+    // check for a change directory command
     if (strcmp(command[0], "cd") == 0){
         if (command[1] == NULL){
             fprintf(stderr, "Usage: cd <path>\n");
@@ -117,37 +117,39 @@ void executeCommand(char **command){
     int newIndex = 0;
     char *actualCommand[16];
     while (command[i] != NULL){
-        if (strcmp(command[i], "<") == 0){
-            if (i == 0){  // if the user wrote something like "< file.txt"
+        if (strcmp(command[i], "<") == 0){  // check for input
+            if (i == 0){  // if the user wrote " < file.txt"
                 fprintf(stderr, "Error %d (%s)\n", errno, strerror(errno));
                 freeCommands(command);
                 return;
-            } else if (command[i+1] == NULL){
+            } else if (command[i+1] == NULL){  // if the user wrote "cmd < "
                 fprintf(stderr, "Error %d (%s)\n", errno, strerror(errno));
                 freeCommands(command);
                 return;
             }
-            input = command[i+1];
+            input = command[i+1];  // store the input file
             i += 2;
-        } else if (strcmp(command[i], ">") == 0){
-            if (i == 0){  // if the user wrote something like "> file.txt"
+        } else if (strcmp(command[i], ">") == 0){  // check for output
+            if (i == 0){  // if the user wrote " > file.txt"
                 fprintf(stderr, "Error %d (%s)\n", errno, strerror(errno));
                 freeCommands(command);
                 return;
-            } else if (command[i+1] == NULL){
+            } else if (command[i+1] == NULL){  // if the user wrote "file1.txt > "
                 fprintf(stderr, "Error %d (%s)\n", errno, strerror(errno));
                 freeCommands(command);
                 return;
             }
-            output = command[i+1];
+            output = command[i+1];  // store the output file
             i += 2;
         } else{
             actualCommand[newIndex++] = command[i++];
         }
     }
 
+    // last command has to be NULL
     actualCommand[newIndex] = NULL;
 
+    // set command equal to the actual commands
     for (int i = 0; i <= newIndex; i++){
         command[i] = actualCommand[i];
     }
@@ -161,12 +163,12 @@ void executeCommand(char **command){
     if (pid == 0){
         // child
         if (input != NULL){
-            int fd = open(input, O_RDONLY);
+            int fd = open(input, O_RDONLY);  // open the input file
             if (fd < 0){
                 fprintf(stderr, "Error %d (%s)\n", errno, strerror(errno));
                 exit(4);
             }
-            dup2(fd, STDIN_FILENO);
+            dup2(fd, STDIN_FILENO);  // redirect standard in to the file
             close(fd);
         }
         if (output != NULL){
@@ -175,7 +177,7 @@ void executeCommand(char **command){
                 fprintf(stderr, "Error %d (%s)\n", errno, strerror(errno));
                 exit(4);
             }
-            dup2(fd, STDOUT_FILENO);
+            dup2(fd, STDOUT_FILENO);  // redirect standard out to the file
             close(fd);
         }
 
@@ -192,22 +194,22 @@ void executeCommand(char **command){
 
 char *tokenize(char *input, int *lastChar, bool *errorStatus){
     bool inQuotes = false;
-    char *result = calloc(1024, sizeof(char));
+    char *result = calloc(1024, sizeof(char));  // this will get returned at the end
     int i = 0;
-    while (true){
-        if (input[*lastChar] == ' '){
+    while (true){  
+        if (input[*lastChar] == ' '){  // take away leading spaces
             (*lastChar)++;
         } else{break;}
     }
-    while (i < 1024){
+    while (i < 1024){  // main loop
         if (input[*lastChar] == '\0'){
-            if (i == 0){
+            if (i == 0){  // if the last token has already been made
                 free(result);
                 return NULL;
             } else{
                 break;
             }
-        }else if (input[*lastChar] == '"'){
+        }else if (input[*lastChar] == '"'){  // check for quotes
             if (inQuotes){
                 inQuotes = false;
                 (*lastChar)++;
@@ -215,8 +217,8 @@ char *tokenize(char *input, int *lastChar, bool *errorStatus){
                 inQuotes = true;
                 (*lastChar)++;
             }
-        }else if (input[*lastChar] == '\\'){
-            if (input[(*lastChar)+1] != '\0'){    
+        }else if (input[*lastChar] == '\\'){  // if a backslash was typed
+            if (input[(*lastChar)+1] != '\0'){  // checking to make sure the backslash is not the last thing typed
                 result[i] = input[(*lastChar)+1];
                 (*lastChar) += 2;
                 i++;
@@ -226,22 +228,22 @@ char *tokenize(char *input, int *lastChar, bool *errorStatus){
                 *errorStatus = true;
                 return NULL;
             }
-        }else if (input[*lastChar] == ' '){
+        }else if (input[*lastChar] == ' '){  // checking spaces
             if (inQuotes){
                 result[i] = input[*lastChar];
                 (*lastChar)++;
                 i++;
-            } else{
+            } else{  // else stop tokenizing
                 (*lastChar)++;
                 break;
             }
-        } else{
+        } else{  // if nothing else, append the char to the resulting token
             result[i] = input[*lastChar];
             (*lastChar)++;
             i++;
         }
     }
-    if (inQuotes){
+    if (inQuotes){  // if an odd number of quotes were written
         printf("failed to close quotation\n");
         *errorStatus = true;
         free(result);
@@ -251,6 +253,7 @@ char *tokenize(char *input, int *lastChar, bool *errorStatus){
     return result;
 }
 
+// function to empty the command array
 void freeCommands(char **command){
     if (command != NULL){
         for (int i = 0; i < 32; i++){
