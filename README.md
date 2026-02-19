@@ -5,7 +5,7 @@ This project was done entirely by Austin Brown
 This program is a simple shell used within the terminal. 
 It can run any basic system process. Added functionality includes 
 the ability to change directories with "cd", the ability to add
-spaces to a file name using "" or \, and the ability to stop the 
+spaces to a file name using "" or \\, and the ability to stop the 
 program by typing "exit".
 
 ## how to access
