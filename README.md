@@ -16,7 +16,8 @@ from Github, here's some instructions
 ### How to Clone
 
 - open your terminal and change to the directory you want the REPO to be in
-- type "git clone <url>" 
+- type "git clone https://github.com/Austin-cool/Shell-Project"
+- ps: you can copy/paste in the terminal by typing ctrl+shft+c/v 
 
 ### How to Compile
 
