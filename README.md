@@ -8,6 +8,12 @@ the ability to change directories with "cd", the ability to add
 spaces to a file name using "" or \\, and the ability to stop the 
 program by typing "exit".
 
+## Notable stuff that is not doable in this program:
+
+- << and >>
+- 2> and 2<
+- Piping 
+
 ## how to access
 
 For those who don't know how to clone, compile, and run a program 
